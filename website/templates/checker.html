@@ -1,0 +1,169 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Symptom Checker | MediPal</title>
+    <link rel="stylesheet" href="{% static 'website/css/style.css' %}">
+    <style>
+        /* --- Local adjustments to blend with your existing style.css --- */
+        body {
+            background-color: #f9fafc;
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        .assessment-container {
+            max-width: 700px;
+            margin: 60px auto;
+            background: #fff;
+            padding: 40px 50px;
+            border-radius: 20px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .form-title {
+            font-size: 1.8em;
+            color: #333;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        .disclaimer {
+            font-size: 0.9em;
+            color: #777;
+            background: #f1f3f6;
+            border-left: 5px solid #4a90e2;
+            padding: 12px 15px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+            text-align: left;
+            line-height: 1.6;
+        }
+
+        form.assessment-form {
+            text-align: left;
+        }
+
+        .assessment-form p {
+            margin-bottom: 15px;
+        }
+
+        label {
+            font-weight: 500;
+            color: #333;
+            display: block;
+            margin-bottom: 6px;
+        }
+
+        input[type="radio"], input[type="checkbox"], select {
+            margin-right: 8px;
+        }
+
+        .form-buttons {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            margin-top: 25px;
+        }
+
+        .btn {
+            padding: 10px 18px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .btn-assess {
+            background-color: #4a90e2;
+            color: white;
+        }
+
+        .btn-assess:hover {
+            background-color: #3c7bd1;
+        }
+
+        .btn-reset {
+            background-color: #e5e7eb;
+            color: #333;
+        }
+
+        .btn-reset:hover {
+            background-color: #d1d5db;
+        }
+
+        .result-card {
+            margin-top: 40px;
+            padding: 25px;
+            border-radius: 15px;
+            text-align: left;
+        }
+
+        .result-card.success {
+            background-color: #e8f9ee;
+            border-left: 6px solid #38a169;
+        }
+
+        .result-card.warning {
+            background-color: #fffbea;
+            border-left: 6px solid #ecc94b;
+        }
+
+        .result-card h3 {
+            margin-top: 0;
+        }
+
+        .btn-back {
+            display: inline-block;
+            margin-top: 35px;
+            text-decoration: none;
+            color: #4a90e2;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .btn-back:hover {
+            color: #356ab8;
+        }
+    </style>
+</head>
+<body>
+    <div class="assessment-container">
+        <h2 class="form-title">Patient Symptom Assessment</h2>
+
+        <div class="disclaimer">
+            <strong>Disclaimer:</strong> This tool is intended only for pre-assessment and self-evaluation.
+            It is designed to help screen or triage, <strong>not diagnose</strong>. Accuracy may vary. 
+            A positive result should always be followed by a proper clinical evaluation to confirm the diagnosis 
+            and rule out other possible causes of symptoms.
+        </div>
+
+        <form method="post" class="assessment-form">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <div class="form-buttons">
+                <button type="submit" class="btn btn-assess">Assess</button>
+                <button type="reset" class="btn btn-reset">Reset</button>
+            </div>
+        </form>
+
+        {% if prediction_result %}
+        <div class="result-card {% if prediction_result.alert_type == 'success' %}success{% else %}warning{% endif %}">
+            <h3>Assessment Result</h3>
+            <p>{{ prediction_result.message }}</p>
+            <ul>
+                {% for disease, prob in top_diseases %}
+                    <li><strong>{{ disease }}</strong>: {{ prob }}%</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
+        <a href="{% url 'staff_dashboard' %}" class="btn-back">← Back to Home</a>
+    </div>
+</body>
+</html>

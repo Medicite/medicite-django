@@ -1,0 +1,115 @@
+{% load static %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="stylesheet" href="{% static 'website/css/style.css' %}">
+
+{% block content %}
+<div class="container">
+  <h2 class="card-title"><i class="fas fa-user-pen"></i> Edit Profile</h2>
+  
+  <div class="card add-patient-card">
+    <form method="POST" class="profile-form">
+      {% csrf_token %}
+
+      <!-- Row 1: Name fields -->
+      <div class="form-row">
+        <div class="form-group">
+          <label for="id_fname">First Name</label>
+          {{ form.fname }}
+        </div>
+        <div class="form-group">
+          <label for="id_lname">Last Name</label>
+          {{ form.lname }}
+        </div>
+        <div class="form-group">
+          <label for="id_mname">Middle Name</label>
+          {{ form.mname }}
+        </div>
+      </div>
+
+      <!-- Row 2: Personal info -->
+      <div class="form-row">
+        <div class="form-group">
+          <label for="id_birthdate">Date of Birth</label>
+          <input type="date" name="birthdate" id="id_birthdate" class="form-control" value="{{ form.birthdate.value|default:'' }}">
+        </div>
+        <div class="form-group">
+          <label for="id_gender">Gender</label>
+          
+          <select name="gender" id="id_gender" required>
+            <option value="male" {% if form.gender.value == "male" %}selected{% endif %}>Male</option>
+            <option value="female" {% if form.gender.value == "female" %}selected{% endif %}>Female</option>
+          </select>
+
+
+        </div>
+        <div class="form-group">
+          <label for="id_blood_type">Blood Type</label>
+          {{ form.blood_type }}
+        </div>
+      </div>
+
+      <!-- Row 3: Contact info -->
+      <div class="form-row">
+        <div class="form-group">
+          <label for="id_phone_number">Phone Number</label>
+          <div style="display:flex; align-items:center; gap:5px;">
+              <span>+63</span>
+              <input type="text" name="phone_number" id="id_phone_number" 
+                  class="form-control" 
+                  placeholder="9123456789" 
+                  maxlength="10"
+                  pattern="[0-9]{10}"
+                  title="Enter 10-digit phone number only" 
+                  required>
+          </div>
+          <small>Enter 10-digit number only (e.g., 9123456789)</small>
+        </div>
+
+        <div class="form-group">
+          <label for="id_email">Email Address</label>
+          {{ form.email }}
+        </div>
+      </div>
+
+      <!-- Row 4: Address & Kinship -->
+      <div class="form-row">
+        <div class="form-group full-width">
+          <label for="id_address">Address</label>
+          {{ form.address }}
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" class="btn btn-save"><i class="fas fa-save"></i> Save Profile</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Phone number validation script -->
+<script>
+const phoneInput = document.getElementById('id_phone_number');
+
+phoneInput.addEventListener('input', function() {
+    // Remove any non-digit characters
+    this.value = this.value.replace(/\D/g, '');
+    
+    // Limit to 10 digits
+    if (this.value.length > 10) {
+        this.value = this.value.slice(0, 10);
+    }
+});
+</script>
+
+<style>
+.container { max-width: 900px; margin: 20px auto; }
+.card.add-patient-card { background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 3px 8px rgba(0,0,0,0.1); }
+.form-row { display: flex; gap: 15px; margin-bottom: 15px; flex-wrap: wrap; }
+.form-group { flex: 1; min-width: 150px; display: flex; flex-direction: column; }
+.form-group.full-width { flex: 100%; }
+.form-group label { font-weight: 600; margin-bottom: 5px; }
+.form-actions { margin-top: 20px; text-align: right; }
+.btn-save { background-color: #4CAF50; color: white; padding: 10px 18px; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; }
+.btn-save:hover { background-color: #45a049; }
+</style>
+{% endblock %}

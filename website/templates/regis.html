@@ -1,0 +1,115 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MediPal | Register</title>
+
+  <!-- icons & fonts -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+  <!-- your main stylesheet (unchanged) -->
+  <link rel="stylesheet" href="{% static 'website/css/style.css' %}">
+
+  <!-- scoped centering only for auth pages -->
+  <style>
+    .auth-page {
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      background-color: var(--background, #e3f2fd);
+    }
+    @media (max-width: 600px) {
+      .auth-page {
+        align-items: flex-start;
+        padding-top: 40px;
+        padding-bottom: 40px;
+      }
+    }
+  </style>
+</head>
+<body class="auth-page">
+  <div class="auth-container">
+    <div class="medical-branding">
+      <div class="logo">
+        <i class="fas fa-heartbeat"></i>
+        <span>MediPal</span>
+      </div>
+      <h2>Join Our Healthcare Network</h2>
+      <p>Create your account in just a few steps</p>
+    </div>
+
+    <div class="auth-forms">
+      <div class="form-container active">
+        <h3>Create Your Account</h3>
+        <form method="POST" action="{% url 'register' %}">
+          {% csrf_token %}
+
+          {{ form.non_field_errors }}
+          {% for field in form %}
+            {{ field.errors }}
+          {% endfor %}
+
+          <div class="input-group">
+            <i class="fas fa-user"></i>
+            <input type="text" name="fname" placeholder="First Name" required>
+          </div>
+          <div class="input-group">
+            <i class="fas fa-user"></i>
+            <input type="text" name="mname" placeholder="Middle Name" required>
+          </div>
+          <div class="input-group">
+            <i class="fas fa-user"></i>
+            <input type="text" name="lname" placeholder="Last Name" required>
+          </div>
+          <div class="input-group">
+            <i class="fas fa-envelope"></i>
+            <input type="email" name="email" placeholder="Email Address" required>
+          </div>
+          <div class="input-group">
+            <i class="fas fa-phone"></i>
+            <input type="tel" name="number" placeholder="Phone Number" required>
+          </div>
+          <div class="input-group">
+            <i class="fas fa-lock"></i>
+            <input type="password" name="password1" placeholder="Password" required>
+          </div>
+          <div class="input-group">
+            <i class="fas fa-lock"></i>
+            <input type="password" name="password2" placeholder="Confirm Password" required>
+          </div>
+          <button type="submit" class="btn">Register Now</button>
+        </form>
+
+        <p class="switch-form">
+          Already have an account?
+          <a href="{% url 'login' %}">Login here</a>
+        </p>
+
+
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.querySelectorAll(".toggle-password").forEach(icon => {
+      icon.addEventListener("click", function () {
+        const targetId = this.dataset.target;
+        const input = document.getElementById(targetId);
+        if (!input) return;
+        if (input.type === "password") {
+          input.type = "text";
+          this.classList.replace("fa-eye", "fa-eye-slash");
+        } else {
+          input.type = "password";
+          this.classList.replace("fa-eye-slash", "fa-eye");
+        }
+      });
+    });
+  </script>
+</body>
+</html>

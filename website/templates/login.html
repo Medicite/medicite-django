@@ -1,0 +1,96 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MediPal | Login</title>
+
+  <!-- icons & fonts -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+  <!-- your main stylesheet (unchanged) -->
+  <link rel="stylesheet" href="{% static 'website/css/style.css' %}">
+
+  <!-- scoped centering only for auth pages -->
+  <style>
+    /* Center only pages that explicitly opt-in using class="auth-page" on <body> */
+    .auth-page {
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px; /* avoids touching screen edges on small devices */
+      background-color: var(--background, #e3f2fd);
+    }
+
+    /* On very small screens, allow top spacing so content isn't vertically crowded */
+    @media (max-width: 600px) {
+      .auth-page {
+        align-items: flex-start;
+        padding-top: 40px;
+        padding-bottom: 40px;
+      }
+    }
+  </style>
+</head>
+<body class="auth-page">
+  <div class="auth-container">
+    <div class="medical-branding">
+      <div class="logo">
+        <i class="fas fa-heartbeat"></i>
+        <span>MediPal</span>
+      </div>
+      <h2>Your Trusted Medical Partner</h2>
+      <p>Access your health records and appointments</p>
+    </div>
+
+    <div class="auth-forms">
+      <div class="form-container active">
+        <h3>Login to Your Account</h3>
+        <form id="loginForm" method="POST" action="{% url 'login' %}">
+          {% csrf_token %}
+          <div class="input-group">
+            <i class="fas fa-user"></i>
+            <input type="text" name="identifier" placeholder="Email or Number" required>
+          </div>
+
+          <div class="input-group">
+            <i class="fas fa-lock"></i>
+            <input type="password" name="password" id="loginPassword" placeholder="Password" required>
+            <i class="fas fa-eye toggle-password" data-target="loginPassword" style="cursor:pointer;"></i>
+          </div>
+
+          <div class="options">
+            <a href="#" class="forgot-password">Forgot password?</a>
+          </div>
+
+          <button type="submit" class="btn">Login</button>
+        </form>
+
+        <p class="switch-form">Don't have an account? <a href="{% url 'register' %}">Register here</a></p>
+
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* Password show/hide (works for this page and register page) */
+    document.querySelectorAll(".toggle-password").forEach(icon => {
+      icon.addEventListener("click", function () {
+        const targetId = this.dataset.target;
+        const input = document.getElementById(targetId);
+        if (!input) return;
+        if (input.type === "password") {
+          input.type = "text";
+          this.classList.replace("fa-eye", "fa-eye-slash");
+        } else {
+          input.type = "password";
+          this.classList.replace("fa-eye-slash", "fa-eye");
+        }
+      });
+    });
+  </script>
+</body>
+</html>

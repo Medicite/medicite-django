@@ -1,0 +1,783 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MediPal - Patient Portal</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'website/css/style.css' %}">
+
+</head>
+<body>
+    <!-- Header with User Info -->
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <i class="fas fa-heartbeat"></i>
+                    <span>MediPal</span>
+                </div>
+                <div class="user-info">
+
+                    {% if request.user.is_authenticated %}
+                        <!-- Logout button -->
+                    <form action="{% url 'logout' %}" method="post" style="display:inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="logout-btn" title="Log out">
+                        <i class="fas fa-sign-out-alt"></i>
+                        </button>
+                    </form>
+                    {% endif %}
+
+                    <div class="user-avatar">
+                    {% if request.user.is_authenticated %}
+                        {{ request.user.fname|first|upper }}{{ request.user.lname|first|upper }}
+                    {% else %}
+                        --
+                    {% endif %}
+                    </div>
+
+                    <div class="user-details">
+                        <div class="user-name">
+                        {% if request.user.is_authenticated %}
+                            {{ request.user.fname }}
+                        {% else %}
+                            Guest
+                        {% endif %}
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="container">
+        <div class="main-content">
+            <!-- Tabs Navigation -->
+            <div class="tabs">
+                <div class="tab active" data-tab="patient-profile">User Profile</div>
+                <div class="tab" data-tab="appointment">Appointment</div>
+                <div class="tab" data-tab="health-assessment">Health Assessment</div>
+                <div class="tab" data-tab="records">Medical Records</div>
+            </div>
+
+            
+            <!-- Patient Profile Tab (Updated) -->
+            <div class="tab-content active" id="patient-profile">
+                <div class="profile-header-bar">
+                    <h2 class="card-title">
+                        <i class="fas fa-user-circle"></i> User Profile
+                    </h2>
+                    <a href="{% url 'edit_patient_profile' %}" class="btn-add-patient">
+                        <i class="fas fa-plus"></i> Edit Profile
+                    </a>
+                </div>
+
+                <div class="patient-cards">
+                    {% for patient in profiles %}
+                    <div class="patient-card">
+                        <div class="patient-header" onclick="toggleDetails(this)">
+                            <!-- Avatar removed -->
+                            <div class="patient-info">
+                                <h3 class="patient-name">{{ patient.fname }} {{ patient.lname }}</h3>
+                            </div>
+                            <i class="fas fa-chevron-down toggle-icon"></i>
+                        </div>
+
+                        <div class="patient-details">
+                            <p><strong>Gender:</strong> {{ patient.gender }}</p>
+                            <p><strong>Blood Type:</strong> {{ patient.blood_type }}</p>
+                            <p><strong>Phone:</strong> +63{{ patient.phone_number }}</p>
+                            <p><strong>Email:</strong> {{ patient.email }}</p>
+                            <p><strong>Address:</strong> {{ patient.address }}</p>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <p>No user information available.</p>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <script>
+                function toggleDetails(element) {
+                    const allDetails = document.querySelectorAll('.patient-details');
+                    const allIcons = document.querySelectorAll('.toggle-icon');
+                    const details = element.nextElementSibling;
+                    const icon = element.querySelector('.toggle-icon');
+
+                    // Close all others first
+                    allDetails.forEach(d => {
+                        if (d !== details) d.classList.remove('show');
+                    });
+                    allIcons.forEach(i => {
+                        if (i !== icon) i.classList.remove('rotated');
+                    });
+
+                    // Toggle the clicked one
+                    details.classList.toggle('show');
+                    icon.classList.toggle('rotated');
+                }
+            </script>
+
+            <style>
+            /* Quick CSS for patient cards */
+            .patient-cards {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 15px;
+                max-height: 500px;
+                overflow-y: auto;
+            }
+
+            .patient-card {
+                background: #fff;
+                padding: 15px;
+                border-radius: 10px;
+                box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+                flex: 1 1 250px;
+                min-width: 250px;
+                transition: all 0.3s ease;
+            }
+
+            .patient-header {
+                display: flex;
+                gap: 10px;
+                margin-bottom: 10px;
+                align-items: center;
+                cursor: pointer;
+            }
+
+            .patient-info h3 {
+                margin: 0;
+                font-size: 1.1rem;
+            }
+
+            .patient-info p {
+                margin: 0;
+                font-size: 0.95rem;
+                color: #555;
+            }
+
+            .patient-details {
+                display: none;
+                padding-top: 8px;
+                border-top: 1px solid #eee;
+            }
+
+            .patient-details.show {
+                display: block;
+                animation: fadeIn 0.3s ease-in-out;
+            }
+
+            .toggle-icon {
+                margin-left: auto;
+                transition: transform 0.3s ease;
+                color: #666;
+            }
+
+            .toggle-icon.rotated {
+                transform: rotate(180deg);
+            }
+
+            @keyframes fadeIn {
+                from { opacity: 0; transform: translateY(-5px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+            </style>
+
+            <!-- Appointment Tab with Form Selection -->
+            <div class="tab-content" id="appointment">
+                <h2 class="card-title"><i class="fas fa-calendar-plus"></i> Schedule an Appointment</h2>
+                
+                <div class="card">
+
+                    <form id="appointment-form" method="POST">
+                        {% csrf_token %}
+                        {{ form.as_p }}
+                        <button type="submit" class="btn">Schedule Appointment</button>
+                    </form>
+
+                </div>
+                
+                <div class="card">
+                    <h3 class="card-title"><i class="fas fa-clock"></i> Upcoming Appointments</h3>
+                    <ul>
+                        {% for appointment in appointments %}
+                        <li>{{ appointment.preferred_date }} - {{ appointment.preferred_time }} ({{ appointment.get_appointment_type_display }})</li>
+                        {% empty %}
+                        <p>No appointments scheduled.</p>
+                        {% endfor %}
+                    </ul>
+                </div>
+
+            </div>
+
+            <!-- Health Assessment Tab with Request Form -->
+            <div class="tab-content" id="health-assessment">
+                <h2 class="card-title"><i class="fas fa-stethoscope"></i> Health Assessment & Requests</h2>
+                <p>Complete a health assessment or submit a request for medical services.</p>
+                
+                <!-- Request Type Selector -->
+                <div class="card">
+                    <h3>Select Request Type</h3>
+                    <div class="request-types">
+                        <div class="request-type" data-type="symptoms">
+                            <i class="fas fa-thermometer-half"></i>
+                            <h3>Symptom Checker</h3>
+                            <p>Report symptoms for assessment</p>
+                        </div>
+                        
+                        <div class="request-type" data-type="referral">
+                            <i class="fas fa-file-medical"></i>
+                            <h3>Specialist Referral</h3>
+                            <p>Request referral to a specialist</p>
+                        </div>
+                        <div class="request-type" data-type="lab">
+                            <i class="fas fa-vial"></i>
+                            <h3>Lab Test Request</h3>
+                            <p>Request laboratory tests</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Symptom Checker Form -->
+                <div class="card request-form" id="symptoms-form">
+                    <h3><i class="fas fa-thermometer-half"></i> Symptom Checker</h3>
+                    <button type="button" class="btn btn-assess" onclick="window.location.href='{% url 'checker' %}'">
+                        <i class="fas fa-stethoscope"></i> Assess
+                    </button>
+                </div>
+                
+
+                
+                <!-- Specialist Referral Form -->
+                <div class="card request-form" id="referral-form" style="display: none;">
+                    <h3><i class="fas fa-file-medical"></i> Specialist Referral Request</h3>
+                    <form>
+                        <div class="form-group">
+                            <label for="specialty-type">Specialty Needed</label>
+                            <select class="form-control" id="specialty-type">
+                                <option value="">Select specialty</option>
+                                <option value="cardiology">Cardiology</option>
+                                <option value="dermatology">Dermatology</option>
+                                <option value="orthopedics">Orthopedics</option>
+                                <option value="neurology">Neurology</option>
+                                <option value="gastroenterology">Gastroenterology</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="referral-reason">Reason for Referral</label>
+                            <textarea class="form-control" id="referral-reason" rows="3" placeholder="Please explain why you need a referral..."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="previous-treatment">Previous Treatments</label>
+                            <textarea class="form-control" id="previous-treatment" rows="2" placeholder="List any treatments you've already tried..."></textarea>
+                        </div>
+                        <button type="submit" class="btn">Request Specialist Referral</button>
+                    </form>
+                </div>
+                
+                <!-- Lab Test Request Form -->
+                <div class="card request-form" id="lab-form" style="display: none;">
+                    <h3><i class="fas fa-vial"></i> Laboratory Test Request</h3>
+                    <form>
+                        <div class="form-group">
+                            <label for="test-type">Type of Test</label>
+                            <select class="form-control" id="test-type">
+                                <option value="">Select test type</option>
+                                <option value="blood">Blood Test</option>
+                                <option value="urine">Urine Test</option>
+                                <option value="imaging">Imaging (X-ray, MRI, etc.)</option>
+                                <option value="other">Other Test</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="test-reason">Reason for Test</label>
+                            <textarea class="form-control" id="test-reason" rows="3" placeholder="Please explain why you need this test..."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="symptoms-for-test">Related Symptoms</label>
+                            <textarea class="form-control" id="symptoms-for-test" rows="2" placeholder="Describe symptoms related to this test request..."></textarea>
+                        </div>
+                        <button type="submit" class="btn">Request Lab Test</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Medical Records Tab -->
+            <div class="tab-content" id="records">
+                <h2 class="card-title"><i class="fas fa-file-medical"></i> Medical Records</h2>
+                
+                <div class="card">
+                    <h3>Recent Visits</h3>
+                    <table class="records-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Doctor</th>
+                                <th>Reason</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                            </tr>
+                            
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="card">
+                    <h3>Medications</h3>
+                    <table class="records-table">
+                        <thead>
+                            <tr>
+                                <th>Medication</th>
+                                <th>Dosage</th>
+                                <th>Frequency</th>
+                                <th>Prescribed</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Events Section -->
+            <div class="events-section">
+                <h2 class="card-title"><i class="fas fa-calendar-alt"></i> Upcoming Events</h2>
+                
+                <div class="event-card">
+                    <div class="event-date">
+                        <div class="event-day">30</div>
+                        <div class="event-month">AUG</div>
+                    </div>
+                    <div class="event-details">
+                        <div class="event-title">EVENT SAMPLE</div>
+                        <p>Free flu shots and boosters available for all registered patients.</p>
+                        <div class="event-location">
+                            <i class="fas fa-map-marker-alt"></i>
+                            <span>Sta. Catalina Rural Health Unit,</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="event-card">
+                    <div class="event-date">
+                        <div class="event-day">10</div>
+                        <div class="event-month">SEPT</div>
+                    </div>
+                    <div class="event-details">
+                        <div class="event-title">Health and Wellness Seminar</div>
+                        <p>Learn about nutrition, exercise, and preventive healthcare measures.</p>
+                        <div class="event-location">
+                            <i class="fas fa-map-marker-alt"></i>
+                            <span>Sta. Catalina Community Center</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Form Modals -->
+    <div class="modal" id="form-modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h2 id="modal-title">Form Preview</h2>
+            <div id="form-preview-content">
+                <!-- Form content will be inserted here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Tab functionality
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                // Remove active class from all tabs and content
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                
+                // Add active class to clicked tab and corresponding content
+                tab.classList.add('active');
+                document.getElementById(tab.dataset.tab).classList.add('active');
+            });
+        });
+
+
+        // Request type selection
+        document.querySelectorAll('.request-type').forEach(type => {
+            type.addEventListener('click', () => {
+                // Remove selected class from all types
+                document.querySelectorAll('.request-type').forEach(t => t.classList.remove('selected'));
+                // Hide all forms
+                document.querySelectorAll('.request-form').forEach(form => form.style.display = 'none');
+                
+                // Add selected class to clicked type
+                type.classList.add('selected');
+                // Show corresponding form
+                const formType = type.dataset.type;
+                document.getElementById(`${formType}-form`).style.display = 'block';
+            });
+        });
+
+        // Form submissions for request forms
+        document.querySelectorAll('.request-form form').forEach(form => {
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const formType = this.closest('.request-form').id.replace('-form', '');
+                const formTitles = {
+                    'symptoms': 'Symptom Report',
+                    'referral': 'Specialist Referral',
+                    'lab': 'Lab Test Request'
+                };
+                
+                alert(`${formTitles[formType]} submitted successfully! We will process your request shortly.`);
+                this.reset();
+            });
+        });
+
+        // Set first request type as default
+        document.querySelector('.request-type').click();
+
+        // Form selection functionality
+        document.querySelectorAll('.form-option').forEach(option => {
+            option.addEventListener('click', () => {
+                option.classList.toggle('selected');
+            });
+        });
+
+        // Modal functionality
+        const modal = document.getElementById('form-modal');
+        const closeModal = document.querySelector('.close-modal');
+        
+        closeModal.addEventListener('click', () => {
+            modal.style.display = 'none';
+        });
+        
+        window.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.style.display = 'none';
+            }
+        });
+
+        // Form preview templates
+        const formTemplates = {
+            consent: `
+                <div class="form-preview">
+                    <div class="form-header">
+                        <h2>WIRELESS ACCESS FOR HEALTH PATIENT'S CONSENT FORM</h2>
+                        <p>SANTA CATALINA RURAL HEALTH UNIT</p>
+                    </div>
+                    
+                    <h3>PATIENT INFORMATION (IMPORMASTON NG PASYENTE)</h3>
+                    
+                    <div class="form-row">
+                        <div class="form-field">
+                            <label for="last-name">LAST NAME (Apelyido)</label>
+                            <input type="text" id="last-name">
+                        </div>
+                        <div class="form-field">
+                            <label for="religion">RELIGION</label>
+                            <input type="text" id="religion">
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-field">
+                            <label for="first-name">FIRST NAME (Pangalan)</label>
+                            <input type="text" id="first-name">
+                        </div>
+                        <div class="form-field">
+                            <label for="education">EDUCATION</label>
+                            <input type="text" id="education">
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-field">
+                            <label for="middle-name">MIDDLE NAME (Gitnong Pangalan)</label>
+                            <input type="text" id="middle-name">
+                        </div>
+                        <div class="form-field">
+                            <label for="occupation">OCCUPATION</label>
+                            <input type="text" id="occupation">
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-field">
+                            <label for="suffix">SUFFIX (e.g. Jr., Sr., II, III)</label>
+                            <input type="text" id="suffix">
+                        </div>
+                        <div class="form-field">
+                            <label for="address">ADDRESS (Tirahan)</label>
+                            <input type="text" id="address">
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-field">
+                            <label for="gender">GENDER (Kasarian)</label>
+                            <select id="gender">
+                                <option value="">Select</option>
+                                <option value="male">Male</option>
+                                <option value="female">Female</option>
+                            </select>
+                        </div>
+                        <div class="form-field">
+                            <label>FAMILY ROLE</label>
+                            <div style="display: flex; gap: 20px; margin-top: 8px;">
+                                <label><input type="radio" name="family-role" value="head"> Head</label>
+                                <label><input type="radio" name="family-role" value="member"> Member</label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-field">
+                            <label for="civil-status">CIVIL STATUS (Katayuang Sibli)</label>
+                            <select id="civil-status">
+                                <option value="">Select</option>
+                                <option value="single">Single</option>
+                                <option value="married">Married</option>
+                                <option value="widowed">Widowed</option>
+                                <option value="separated">Separated</option>
+                            </select>
+                        </div>
+                        <div class="form-field">
+                            <label for="mobile">MOBILE NUMBER</label>
+                            <input type="tel" id="mobile">
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-field">
+                            <label for="birthdate">BIRTHDATE (Kapanganakan)</label>
+                            <input type="date" id="birthdate">
+                        </div>
+                        <div class="form-field">
+                            <label for="blood-type">BLOOD TYPE</label>
+                            <select id="blood-type">
+                                <option value="">Select</option>
+                                <option value="a+">A+</option>
+                                <option value="a-">A-</option>
+                                <option value="b+">B+</option>
+                                <option value="b-">B-</option>
+                                <option value="ab+">AB+</option>
+                                <option value="ab-">AB-</option>
+                                <option value="o+">O+</option>
+                                <option value="o-">O-</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-field">
+                            <label for="mother-name">MOTHER'S NAME (Pangalan ng Ina)</label>
+                            <input type="text" id="mother-name">
+                        </div>
+                        <div class="form-field">
+                            <label>PERSON WITH DISABILITIES</label>
+                            <div style="display: flex; gap: 20px; margin-top: 8px;">
+                                <label><input type="radio" name="pwd" value="yes"> Yes</label>
+                                <label><input type="radio" name="pwd" value="no"> No</label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="consent-section">
+                        <h3>PATIENT'S CONSENT (PAHINTULOT NG PASYENTE)</h3>
+                        <p>Ito ay kasulatan na nagbibigay pahintulot sa STA. CATALINA RHU na ilagak sa Wireless Access for Health (WAH) ang aking patient record (ITR). Sa aking pag-lagda sa kasulatang ito, buong linaw kong nauunawaan at idinedeklara ang mga sumunod:</p>
+                        
+                        <div class="consent-checkbox">
+                            <input type="checkbox" id="consent1">
+                            <label for="consent1">Binigbigyan pahintulot ko ang STA. CATALINA RHU, sa pamamagitam ng pag-gamit ng WAH, na itala sa computer at gawing electronic ang aking patient record sa pang-unawang gagamitin at pangangalagaan ito ng naaayon sa mga batas at regulasyon itinakda ng estado.</label>
+                        </div>
+                        
+                        <div class="consent-checkbox">
+                            <input type="checkbox" id="consent2">
+                            <label for="consent2">Nauuwaan ko na kung sakaling wala akong sariling cellphone, binibigyan pahintulot ko rin ang STA. CATALINA RHU na i-record ang cellphone number ng pinakamalapit kong kamaganak, kalbigan, o Assigned Personnel na may sakop sa aming district bilang alternatioo o karagdagang cellphone number na maaring gamitin para sa pagapadala ng mga mensahe para akin.</label>
+                        </div>
+                        
+                        <div class="consent-checkbox">
+                            <input type="checkbox" id="consent3">
+                            <label for="consent3">Nauunawaan ko na sa mga pagkakataan hindi akma para sa akin ang natanggap kong text message, akin dapat itong ipag-bigay alam sa aking Assigned Personnel upang mahigyan ng kaukulang aksyon.</label>
+                        </div>
+                        
+                        <div class="consent-checkbox">
+                            <input type="checkbox" id="consent4">
+                            <label for="consent4">Kung nais kong mapawalang bisa ang ano mang nakasaad dito, nababatid kong kinakailangan kong bumallik sa aming Health Clinic upang personal na pirmahan ang Withdrawal of Consent Form.</label>
+                        </div>
+                    </div>
+                    
+                    <div class="consent-section">
+                        <h3>PAGBIBIGAY PAHINTULOT SA PAGKUHA NG LARAWAN</h3>
+                        <p>Binibigyan ko ng permiso at pahintulot ang STA. CATALINA RHU para kuhanan ako ng larawan bilang isang kinakailangan para makapag-avail ng benepisyong pang Konsulta Package</p>
+                        <p>Sa pamamagitam ng paglagda sa ibaba, pinahihintulutan ko ang aking Konsulta facility na itago ang aking mga larawan para sa pos-audit monitoring ng PhilHealth.</p>
+                    </div>
+                    
+                    <div class="signature-area">
+                        <div class="form-row">
+                            <div class="form-field">
+                                <label for="signature">SIGNATURE OF PATIENT</label>
+                                <input type="text" id="signature">
+                            </div>
+                            <div class="form-field">
+                                <label for="signature-date">DATE</label>
+                                <input type="date" id="signature-date">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <button class="btn" style="margin-top: 20px;">Submit Consent Form</button>
+                </div>
+            `,
+            
+            lab: `
+                <div class="form-preview">
+                    <div class="form-header">
+                        <h2>Laboratory Request Form</h2>
+                        <p>Sta. Catalina Primary Care Facility</p>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-field">
+                            <label for="lab-patient-name">Patient Name</label>
+                            <input type="text" id="lab-patient-name">
+                        </div>
+                        <div class="form-field">
+                            <label for="lab-patient-dob">Date of Birth</label>
+                            <input type="date" id="lab-patient-dob">
+                        </div>
+                    </div>
+                    
+                    <div class="form-field">
+                        <label for="lab-patient-address">Address</label>
+                        <input type="text" id="lab-patient-address">
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-field">
+                            <label for="lab-patient-age">Age</label>
+                            <input type="number" id="lab-patient-age">
+                        </div>
+                        <div class="form-field">
+                            <label for="lab-patient-contact">Contact Number</label>
+                            <input type="tel" id="lab-patient-contact">
+                        </div>
+                    </div>
+                    
+                    <h3>Select Tests Needed</h3>
+                    <div class="form-field">
+                        <label><input type="checkbox"> Complete Blood Count</label>
+                    </div>
+                    <div class="form-field">
+                        <label><input type="checkbox"> Urinalysis</label>
+                    </div>
+                    <div class="form-field">
+                        <label><input type="checkbox"> Blood Glucose</label>
+                    </div>
+                    <div class="form-field">
+                        <label><input type="checkbox"> Lipid Profile</label>
+                    </div>
+                    
+                    <button class="btn" style="margin-top: 20px;">Submit Lab Request</button>
+                </div>
+            `,
+            
+            philhealth: `
+                <div class="form-preview">
+                    <div class="form-header">
+                        <h2>PhilHealth Konsulta Registration Form (PKRF)</h2>
+                        <p>Republic of the Philippines</p>
+                    </div>
+                    
+                    <div class="form-field">
+                        <label for="phi">PHI Number</label>
+                        <input type="text" id="phi">
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-field">
+                            <label for="philhealth-last-name">Last Name</label>
+                            <input type="text" id="philhealth-last-name">
+                        </div>
+                        <div class="form-field">
+                            <label for="philhealth-first-name">First Name</label>
+                            <input type="text" id="philhealth-first-name">
+                        </div>
+                        <div class="form-field">
+                            <label for="philhealth-middle-name">Middle Name</label>
+                            <input type="text" id="philhealth-middle-name">
+                        </div>
+                    </div>
+                    
+                    <div class="form-field">
+                        <label for="philhealth-address">Address</label>
+                        <input type="text" id="philhealth-address">
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-field">
+                            <label for="philhealth-birthdate">Date of Birth</label>
+                            <input type="date" id="philhealth-birthdate">
+                        </div>
+                        <div class="form-field">
+                            <label for="philhealth-contact">Contact Number</label>
+                            <input type="tel" id="philhealth-contact">
+                        </div>
+                    </div>
+                    
+                    <h3>Konsulta Package Provider</h3>
+                    <div class="form-field">
+                        <label for="kpp-choice">1st Choice KPP</label>
+                        <input type="text" id="kpp-choice">
+                    </div>
+                    
+                    <div class="form-field">
+                        <label for="certification">
+                            <input type="checkbox"> I hereby certify that I did not avail of First Patient Encounter (FPE) in my previous KPP
+                        </label>
+                    </div>
+                    
+                    <button class="btn" style="margin-top: 20px;">Submit PhilHealth Form</button>
+                </div>
+            `
+        };
+
+        // Add click event to form options to show preview
+        document.querySelectorAll('.form-option').forEach(option => {
+            option.addEventListener('click', function() {
+                const formType = this.dataset.form;
+                document.getElementById('modal-title').textContent = this.querySelector('h3').textContent;
+                document.getElementById('form-preview-content').innerHTML = formTemplates[formType];
+                modal.style.display = 'block';
+            });
+        });
+    </script>
+</body>
+</html>

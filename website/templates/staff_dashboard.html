@@ -1,0 +1,358 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Staff Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'website/css/style.css' %}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+    <header>
+        <h1>Welcome, {{ request.user.fname }} {{ request.user.lname }}</h1>
+        <p>Your role: <strong>{{ user_role|capfirst }}</strong></p>
+        <hr>
+    </header>
+    <!-- Logout Button -->
+    <div>
+        <form method="post" action="{% url 'logout' %}">
+            {% csrf_token %}
+            <button type="submit" class="logout-btn">
+                <i class="fa fa-sign-out-alt"></i> Logout
+            </button>
+        </form>
+    </div>
+
+    {% if user_role == "doctor" %}
+    <section>
+        <h2>Doctor Panel</h2>
+        <p>Create reports or review preliminary analysis submitted by nurses.</p>
+
+        <!-- Button to create report -->
+        <button id="toggleReportForm" class="btn-create-report">
+            <i class="fa fa-plus"></i> Create New Report
+        </button>
+
+        <!-- Collapsible Report Form -->
+        <div id="reportFormContainer" style="display:none; margin-top: 15px;">
+            <form method="post" id="createReportForm">
+                {% csrf_token %}
+                <input type="hidden" name="create_report" value="1">
+                
+                <label for="patient">Patient:</label>
+                <select name="patient" id="patient" required>
+                    {% for patient in patient_profiles %}
+                        <option value="{{ patient.id }}">{{ patient.fname }} {{ patient.lname }} ({{ patient.uid }})</option>
+                    {% endfor %}
+                </select>
+
+                <label for="diagnosis">Diagnosis/Illness:</label>
+                            <select name="diagnosis" required>
+                                <option value="">-- Select Diagnosis --</option>
+                                <option>Dengue</option>
+                                <option>Common Cold</option>
+                                <option>Flu</option>
+                                <option>Hypertension</option>
+                                <option>Diabetes</option>
+                                <option>Constipation</option>
+                                <option>Gastroenteritis</option>
+                                <option>Urinary Tract Infection</option>
+                                <option>Skin Infection</option>
+                                <option>Asthma</option>
+                                <option>Pneumonia</option>
+                                <option>Chickenpox</option>
+                                <option>Ear Infection</option>
+                                <option>Fever</option>
+                                <option>Tuberculosis</option>
+                                <option>Headache</option>
+                                <option>Sore Throat</option>
+                                <option>Bronchitis</option>
+                                <option>Conjunctivitis</option>
+                                <option>Allergic Reaction</option>
+                            </select>
+
+                            <label for="barangay">Barangay:</label>
+                            <select name="barangay" required>
+                                <option value="">-- Select Barangay --</option>
+                                <option>Cabaroan</option>
+                                <option>Cabittaogan</option>
+                                <option>Cabuloan</option>
+                                <option>Pangada</option>
+                                <option>Paratong</option>
+                                <option>Poblacion</option>
+                                <option>Sinabaan</option>
+                                <option>Subec</option>
+                                <option>Tamorong</option>
+                            </select>
+
+                            <label for="services_provided">Services Provided:</label>
+                            <select name="services_provided" required>
+                                <option value="">-- Select Service --</option>
+                                <option>Consultation</option>
+                                <option>Medication</option>
+                                <option>Follow-up</option>
+                                <option>Lab Test</option>
+                            </select>
+
+                <button type="submit">Submit Report</button>
+            </form>
+        </div>
+
+        <!-- Search Form -->
+        <form method="get" class="report-search-form">
+            <input type="text" name="search" placeholder="Search patient by name..." value="{{ search_query }}">
+            <button type="submit"><i class="fa fa-search"></i> Search</button>
+        </form>
+
+        <!-- Reports Table -->
+        <h3>Submitted Reports</h3>
+        {% if patient_reports %}
+            <div class="table-container">
+                <table class="reports-table">
+                    <thead>
+                        <tr>
+                            <th>UID</th>
+                            <th>Patient Name</th>
+                            <th>Barangay</th>
+                            <th>Illness</th>
+                            <th>Submitted By</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for report in patient_reports %}
+                        <tr>
+                            <td>{{ report.patient.uid }}</td>
+                            <td>{{ report.patient.fname }} {{ report.patient.lname }}</td>
+                            <td>{{ report.barangay }}</td>
+                            <td>{{ report.diagnosis }}</td>
+                            <td>
+                                {% if report.staff %}
+                                    {{ report.staff.fname }} {{ report.staff.lname }}
+                                {% else %}
+                                    N/A
+                                {% endif %}
+                            </td>
+                            <td>{{ report.date_created|date:"M d, Y H:i" }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p>No reports found. Please search for a patient to view reports.</p>
+        {% endif %}
+    </section>
+    {% endif %}
+
+
+    {% if user_role == "nurse" %}
+        <section>
+            <h2>Nurse Panel</h2>
+            <p>Assist with appointments and monitor patient stats.</p>
+            <ul>
+                <li><a href="{% url 'medipal' %}">View Appointments</a></li>
+                <li><a href="{% url 'medipal' %}">View Patient Records</a></li>
+            </ul>
+        </section>
+    {% endif %}
+
+    {% if user_role == "info_officer" %}
+        <section>
+            <h2>Information Officer Panel</h2>
+            <p>Manage patient records, view reports, and check predictive analytics.</p>
+            <ul>
+                <li><a href="{% url 'checker' %}">Symptom Checker / Predictive Analytics</a></li>
+                <li><a href="{% url 'medipal' %}">Manage Patient Records</a></li>
+                <li><a href="{% url 'medipal' %}">View Reports</a></li>
+            </ul>
+        </section>
+    {% endif %}
+
+    <section>
+        <h2>Common Staff Info</h2>
+        <h3>Appointments</h3>
+        <ul>
+            {% for appointment in appointments %}
+                <li>{{ appointment.patient_profile.fname }} {{ appointment.patient_profile.lname }} - {{ appointment.preferred_date }} {{ appointment.preferred_time }}</li>
+            {% empty %}
+                <li>No upcoming appointments.</li>
+            {% endfor %}
+        </ul>
+
+        <h3>Patient Profiles</h3>
+        <ul>
+            {% for profile in patient_profiles %}
+                <li>{{ profile.fname }} {{ profile.lname }} - {{ profile.gender }}, {{ profile.age }} years</li>
+            {% empty %}
+                <li>No patient profiles available.</li>
+            {% endfor %}
+        </ul>
+    </section>
+
+    {% if analysis %}
+    <section>
+        <h2>Predictive Analysis</h2>
+
+        <h3>Overall Top 5 Illnesses</h3>
+        <div class="chart-container">
+            <canvas id="topIllnessChart"></canvas>
+        </div>
+
+        <h3>Overall Services Provided</h3>
+        <div class="chart-container">
+            <canvas id="topServiceChart"></canvas>
+        </div>
+
+        <h3>Barangay Analysis</h3>
+        {% for barangay, data in analysis.barangay_analysis.items %}
+            <div class="barangay-analysis">
+                <h4>{{ barangay }}</h4>
+
+                <p>Most likely illnesses:</p>
+                <ul>
+                    {% for illness, count in data.top_illnesses.items %}
+                        <li>{{ illness }}: {{ count }}</li>
+                    {% empty %}
+                        <li>No illnesses recorded.</li>
+                    {% endfor %}
+                </ul>
+
+                <!-- Pie chart for this barangay -->
+                <div class="chart-container">
+                    <canvas id="barangayChart{{ forloop.counter }}"></canvas>
+                </div>
+
+                <p>Top Services:</p>
+                <ul>
+                    {% for service, count in data.top_services.items %}
+                        <li>{{ service }}: {{ count }}</li>
+                    {% empty %}
+                        <li>No services recorded.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endfor %}
+
+    </section>
+
+
+    <script>
+        // Chart for overall top illnesses
+        const topIllnessData = {{ analysis.overall_top_illnesses|safe }};
+        new Chart(document.getElementById('topIllnessChart'), {
+            type: 'bar',
+            data: {
+                labels: Object.keys(topIllnessData),
+                datasets: [{
+                    label: 'Count',
+                    data: Object.values(topIllnessData),
+                    backgroundColor: 'rgba(75, 192, 192, 0.6)',
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    title: {
+                        display: true,
+                        text: 'Top 5 Illnesses',
+                        font: { size: 18 }
+                    }
+                },
+                scales: {
+                    y: { beginAtZero: true }
+                }
+            }
+        });
+
+        // Chart for overall services
+        const topServiceData = {{ analysis.overall_services|safe }};
+        new Chart(document.getElementById('topServiceChart'), {
+            type: 'bar',
+            data: {
+                labels: Object.keys(topServiceData),
+                datasets: [{
+                    label: 'Count',
+                    data: Object.values(topServiceData),
+                    backgroundColor: 'rgba(153, 102, 255, 0.6)',
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    title: {
+                        display: true,
+                        text: 'Services Provided',
+                        font: { size: 18 }
+                    }
+                },
+                scales: {
+                    y: { beginAtZero: true }
+                }
+            }
+        });
+    </script>
+
+    <script>
+        {% for barangay, data in analysis.barangay_analysis.items %}
+            const barangayIllnessData{{ forloop.counter }} = {{ data.top_illnesses|safe }};
+            new Chart(document.getElementById('barangayChart{{ forloop.counter }}'), {
+                type: 'pie',
+                data: {
+                    labels: Object.keys(barangayIllnessData{{ forloop.counter }}),
+                    datasets: [{
+                        label: 'Illness Count',
+                        data: Object.values(barangayIllnessData{{ forloop.counter }}),
+                        backgroundColor: [
+                            'rgba(255, 99, 132, 0.6)',
+                            'rgba(54, 162, 235, 0.6)',
+                            'rgba(255, 206, 86, 0.6)',
+                            'rgba(75, 192, 192, 0.6)',
+                            'rgba(153, 102, 255, 0.6)'
+                        ],
+                        borderColor: '#fff',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { font: { size: 14 } }
+                        },
+                        title: {
+                            display: true,
+                            text: 'Top Illnesses in {{ barangay }}',
+                            font: { size: 16 }
+                        }
+                    }
+                }
+            });
+        {% endfor %}
+    </script>
+
+    <script>
+        document.getElementById('toggleReportForm').addEventListener('click', function() {
+            const formContainer = document.getElementById('reportFormContainer');
+            if (formContainer.style.display === 'none') {
+                formContainer.style.display = 'block';
+            } else {
+                formContainer.style.display = 'none';
+            }
+        });
+    </script>
+
+    {% endif %}
+
+</body>
+</html>
