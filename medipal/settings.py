@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-jo(zu8-66=$5-$z(dor-^o(!-ot%il#@7(*#s^zzm5=kpn(x4y
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['medicite.pythonanywhere.com']
 
 
 # Application definition
@@ -43,6 +43,7 @@ INSTALLED_APPS = [
 AUTH_USER_MODEL = 'website.CustomUser'
 
 STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / 'static'
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
