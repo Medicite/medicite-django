@@ -1,12 +1,20 @@
 # Python
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
 
 # Django
 db.sqlite3
 media/
 static/
 staticfiles/
+
+# ML / Data artifacts
+*.pkl
+*.joblib
+*.csv
+*.npy
 
 # Virtual environment
 venv/
