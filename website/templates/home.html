@@ -315,25 +315,52 @@
                 
                 <div class="card">
                     <h3>Recent Visits</h3>
-                    <table class="records-table">
-                        <thead>
-                            <tr>
-                                <th>Date</th>
-                                <th>Doctor</th>
-                                <th>Reason</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td></td>
-                                <td></td>
-                                <td></td>
-                                <td></td>
-                            </tr>
-                            
-                        </tbody>
-                    </table>
+                    {% if all_appointments %}
+                        <table class="records-table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Time</th>
+                                    <th>Doctor</th>
+                                    <th>Reason</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for appointment in all_appointments %}
+                                <tr>
+                                    <td>{{ appointment.preferred_date|date:"M d, Y" }}</td>
+                                    <td>{{ appointment.preferred_time|time:"g:i A" }}</td>
+                                    <td>
+                                        {% with report=appointment.patientreport_set.first %}
+                                            {% if report and report.staff %}
+                                                {{ report.staff.fname }} {{ report.staff.lname }}
+                                            {% else %}
+                                                <span style="color: #999;">Not assigned</span>
+                                            {% endif %}
+                                        {% endwith %}
+                                    </td>
+                                    <td>
+                                        {{ appointment.get_appointment_type_display }}
+                                        {% if appointment.reason %}
+                                            <br><small style="color: #666;">{{ appointment.reason|truncatewords:10 }}</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge badge-{{ appointment.status }}">
+                                            {{ appointment.get_status_display }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    {% else %}
+                        <p style="text-align: center; padding: 20px; color: #999;">
+                            <i class="fas fa-calendar-times" style="font-size: 2rem; margin-bottom: 10px; display: block;"></i>
+                            No appointments found.
+                        </p>
+                    {% endif %}
                 </div>
                 
                 <div class="card">
@@ -342,62 +369,90 @@
                         <thead>
                             <tr>
                                 <th>Medication</th>
-                                <th>Dosage</th>
-                                <th>Frequency</th>
+                                <th>Quantity</th>
+                                <th>Dosage / Frequency</th>
                                 <th>Prescribed</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <tr>
-                                <td></td>
-                                <td></td>
-                                <td></td>
-                                <td></td>
-                            </tr>
-                            <tr>
-                                <td></td>
-                                <td></td>
-                                <td></td>
-                                <td></td>
-                            </tr>
+                            {% if patient_medications %}
+                                {% for med in patient_medications %}
+                                <tr>
+                                    <td>{{ med.medication_name }}</td>
+                                    <td>{{ med.quantity }}</td>
+                                    <td>{{ med.get_dosage_frequency_display }}</td>
+                                    <td>{{ med.report.date_created|date:"M d, Y" }}</td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="4" style="text-align: center; padding: 20px; color: #999;">
+                                        <i class="fas fa-pills" style="font-size: 2rem; margin-bottom: 10px; display: block;"></i>
+                                        No medications recorded.
+                                    </td>
+                                </tr>
+                            {% endif %}
                         </tbody>
                     </table>
                 </div>
+
+                <style>
+                    .badge {
+                        display: inline-block;
+                        padding: 4px 12px;
+                        border-radius: 12px;
+                        font-size: 0.85em;
+                        font-weight: 600;
+                        text-transform: uppercase;
+                    }
+                    .badge-pending {
+                        background-color: #ffc107;
+                        color: #856404;
+                    }
+                    .badge-confirmed {
+                        background-color: #17a2b8;
+                        color: white;
+                    }
+                    .badge-completed {
+                        background-color: #28a745;
+                        color: white;
+                    }
+                    .badge-cancelled {
+                        background-color: #dc3545;
+                        color: white;
+                    }
+                </style>
             </div>
 
             <!-- Events Section -->
             <div class="events-section">
                 <h2 class="card-title"><i class="fas fa-calendar-alt"></i> Upcoming Events</h2>
                 
-                <div class="event-card">
-                    <div class="event-date">
-                        <div class="event-day">30</div>
-                        <div class="event-month">AUG</div>
-                    </div>
-                    <div class="event-details">
-                        <div class="event-title">EVENT SAMPLE</div>
-                        <p>Free flu shots and boosters available for all registered patients.</p>
-                        <div class="event-location">
-                            <i class="fas fa-map-marker-alt"></i>
-                            <span>Sta. Catalina Rural Health Unit,</span>
+                {% if events %}
+                    {% for event in events %}
+                    <div class="event-card">
+                        <div class="event-date">
+                            <div class="event-day">{{ event.event_date|date:"d" }}</div>
+                            <div class="event-month">{{ event.event_date|date:"M"|upper }}</div>
+                        </div>
+                        <div class="event-details">
+                            <div class="event-title">{{ event.title }}</div>
+                            <p>{{ event.description }}</p>
+                            <div class="event-location">
+                                <i class="fas fa-map-marker-alt"></i>
+                                <span>{{ event.location }}</span>
+                            </div>
                         </div>
                     </div>
-                </div>
-                
-                <div class="event-card">
-                    <div class="event-date">
-                        <div class="event-day">10</div>
-                        <div class="event-month">SEPT</div>
-                    </div>
-                    <div class="event-details">
-                        <div class="event-title">Health and Wellness Seminar</div>
-                        <p>Learn about nutrition, exercise, and preventive healthcare measures.</p>
-                        <div class="event-location">
-                            <i class="fas fa-map-marker-alt"></i>
-                            <span>Sta. Catalina Community Center</span>
+                    {% endfor %}
+                {% else %}
+                    <div class="event-card" style="opacity: 0.7;">
+                        <div class="event-details" style="width: 100%; text-align: center; padding: 20px;">
+                            <i class="fas fa-calendar-times" style="font-size: 2rem; margin-bottom: 10px; display: block; color: #999;"></i>
+                            <p style="color: #999;">No upcoming events scheduled.</p>
                         </div>
                     </div>
-                </div>
+                {% endif %}
             </div>
         </div>
     </div>

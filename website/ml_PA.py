@@ -39,24 +39,43 @@ def train_predictive_model():
     return model
 
 def generate_analysis_data():
+    """Regenerate predictive analysis and barangay stats from all PatientReports."""
     reports = PatientReport.objects.all()
     if not reports.exists():
+        try:
+            joblib.dump({}, ANALYSIS_FILE)
+        except Exception:
+            pass
         return {}
 
-    df = pd.DataFrame(list(reports.values('diagnosis', 'services_provided', 'barangay')))
-    
-    # Overall top 5 illnesses
+    rows = list(reports.values('diagnosis', 'services_provided', 'barangay'))
+    df = pd.DataFrame(rows)
+    # Drop rows with missing diagnosis or barangay so stats reflect only complete data
+    df = df.dropna(subset=['diagnosis', 'barangay'])
+    df['services_provided'] = df['services_provided'].fillna('')
+    df['barangay'] = df['barangay'].astype(str)
+
+    if df.empty:
+        try:
+            joblib.dump({}, ANALYSIS_FILE)
+        except Exception:
+            pass
+        return {}
+
+    # Overall top 5 illnesses (diagnosis)
     top_illnesses = df['diagnosis'].value_counts().head(5).to_dict()
-    
+
     # Overall top 5 services
     top_services = df['services_provided'].value_counts().head(5).to_dict()
 
-    # Barangay-level predictions
+    # Barangay-level stats
     barangay_analysis = {}
     for barangay, group in df.groupby('barangay'):
+        if not barangay or str(barangay) == 'nan':
+            continue
         illness_counts = group['diagnosis'].value_counts().head(5).to_dict()
         service_counts = group['services_provided'].value_counts().head(5).to_dict()
-        barangay_analysis[barangay] = {
+        barangay_analysis[str(barangay)] = {
             'top_illnesses': illness_counts,
             'top_services': service_counts,
         }
@@ -67,6 +86,8 @@ def generate_analysis_data():
         'barangay_analysis': barangay_analysis
     }
 
-    # Save to static file (for reading in views)
-    joblib.dump(analysis, ANALYSIS_FILE)
+    try:
+        joblib.dump(analysis, ANALYSIS_FILE)
+    except Exception:
+        pass
     return analysis

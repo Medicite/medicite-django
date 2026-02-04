@@ -1,7 +1,7 @@
 # forms.py
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
-from .models import PatientProfile, CustomUser, Appointment
+from .models import PatientProfile, CustomUser, Appointment, Event
 from .ml_utils import AGE_COLUMNS, SYMPTOM_COLUMNS, SEX_COLUMN
 from .utils import generate_timeslots
 from datetime import datetime, time, timedelta, date
@@ -52,11 +52,9 @@ class RegisterForm(UserCreationForm):
 # APPOINTMENT FORM
 # -----------------------------
 class AppointmentForm(forms.ModelForm):
-    preferred_time = forms.ChoiceField(label="Preferred Time")  # placeholder
-
     class Meta:
         model = Appointment
-        fields = ["patient_profile", "appointment_type", "preferred_date", "preferred_time"]
+        fields = ["patient_profile", "appointment_type", "preferred_date"]
         widgets = {
             "preferred_date": forms.DateInput(attrs={"type": "date"}),
         }
@@ -79,33 +77,20 @@ class AppointmentForm(forms.ModelForm):
         # Default preferred_date
         self.fields['preferred_date'].initial = date.today()
 
-        # Set available times for the default date
-        self.update_time_choices(self.fields['preferred_date'].initial)
-
-    def update_time_choices(self, selected_date):
-        """Filter available time slots for the selected date."""
-        slots = generate_timeslots()
-        used_slots = Appointment.objects.filter(preferred_date=selected_date).values_list('preferred_time', flat=True)
-        available_slots = [s.strftime("%H:%M") for s in slots if s not in used_slots]
-
-        self.fields['preferred_time'].choices = [(s, s) for s in available_slots]
-
-    def clean_preferred_time(self):
-        time_str = self.cleaned_data['preferred_time']
-        try:
-            return datetime.strptime(time_str, "%H:%M").time()
-        except ValueError:
-            raise forms.ValidationError("Invalid time format. Use HH:MM.")
-
     def clean(self):
         cleaned_data = super().clean()
         date_selected = cleaned_data.get('preferred_date')
-        time_selected = cleaned_data.get('preferred_time')
-
-        if date_selected and time_selected:
-            # Check for double-booking
-            if Appointment.objects.filter(preferred_date=date_selected, preferred_time=time_selected).exists():
-                raise forms.ValidationError("This time slot is already booked. Please select another time.")
+        
+        if date_selected:
+            # Check if the selected date has any available slots
+            from .utils import generate_timeslots
+            slots = generate_timeslots(start_hour=8, end_hour=17, interval=30)  # 30-minute intervals
+            used_slots = Appointment.objects.filter(preferred_date=date_selected).values_list('preferred_time', flat=True)
+            available_slots = [s for s in slots if s not in used_slots]
+            
+            if not available_slots:
+                raise forms.ValidationError("No available time slots for the selected date. Please choose another date.")
+        
         return cleaned_data
 
 
@@ -151,3 +136,19 @@ class PatientReportForm(forms.ModelForm):
         for field_name, field in self.fields.items():
             if hasattr(field, 'empty_label'):
                 field.empty_label = None
+
+
+# -----------------------------
+# EVENT FORM
+# -----------------------------
+class EventForm(forms.ModelForm):
+    class Meta:
+        model = Event
+        fields = ['title', 'description', 'event_date', 'location', 'is_active']
+        widgets = {
+            'title': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Event Title'}),
+            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 4, 'placeholder': 'Event Description'}),
+            'event_date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'location': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Event Location'}),
+            'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        }

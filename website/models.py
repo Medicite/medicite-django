@@ -97,11 +97,19 @@ class Appointment(models.Model):
         ('checkup', 'Routine Checkup'),
     ]
 
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('confirmed', 'Confirmed'),
+        ('completed', 'Completed'),
+        ('cancelled', 'Cancelled'),
+    ]
+
     patient_profile = models.ForeignKey('PatientProfile', on_delete=models.CASCADE)
     appointment_type = models.CharField(max_length=50, choices=APPOINTMENT_TYPES)
     preferred_date = models.DateField()
     preferred_time = models.TimeField()
     reason = models.TextField(blank=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     created_at = models.DateTimeField(auto_now_add=True)
 
         # Which forms were selected
@@ -130,3 +138,45 @@ class PatientReport(models.Model):
 
     def __str__(self):
         return f"Report {self.id} - {self.patient.fname} {self.patient.lname}"
+
+
+class ReportMedication(models.Model):
+    """Medication prescribed in a patient report; shown in patient Medical Records."""
+    DOSAGE_FREQUENCY_CHOICES = [
+        ('once_daily', 'Once daily'),
+        ('twice_daily', 'Twice daily'),
+        ('every_8_hrs', 'Every 8 hours'),
+        ('every_night', 'Every night'),
+        ('every_morning', 'Every morning'),
+        ('every_12_hrs', 'Every 12 hours'),
+        ('every_6_hrs', 'Every 6 hours'),
+        ('three_times_daily', 'Three times daily'),
+        ('as_needed', 'As needed'),
+        ('weekly', 'Once weekly'),
+        ('other', 'Other'),
+    ]
+    report = models.ForeignKey('PatientReport', on_delete=models.CASCADE, related_name='medications')
+    medication_name = models.CharField(max_length=200)
+    quantity = models.PositiveIntegerField(help_text='e.g. 12 tablets')
+    dosage_frequency = models.CharField(max_length=30, choices=DOSAGE_FREQUENCY_CHOICES)
+
+    def __str__(self):
+        return f"{self.medication_name} ({self.get_dosage_frequency_display()})"
+
+
+class Event(models.Model):
+    """Model for managing events/announcements visible to patients"""
+    title = models.CharField(max_length=200)
+    description = models.TextField()
+    event_date = models.DateField()
+    location = models.CharField(max_length=200)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ['event_date']
+
+    def __str__(self):
+        return f"{self.title} - {self.event_date}"
