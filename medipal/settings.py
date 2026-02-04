@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-jo(zu8-66=$5-$z(dor-^o(!-ot%il#@7(*#s^zzm5=kpn(x4y
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['medicite.pythonanywhere.com', '127.0.0.1', 'localhost', '192.168.100.119']
+ALLOWED_HOSTS = ['medicite.pythonanywhere.com', '127.0.0.1', 'localhost', '192.168.100.119', '*']
 
 
 # Application definition
@@ -43,16 +43,19 @@ INSTALLED_APPS = [
 AUTH_USER_MODEL = 'website.CustomUser'
 
 STATIC_URL = '/static/'
-STATIC_ROOT = BASE_DIR / 'static'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
+    
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    
 ]
 
 ROOT_URLCONF = 'medipal.urls'
